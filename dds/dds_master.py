@@ -2,6 +2,7 @@
 # License: Apache License, Version 2.0
 import time
 import threading
+import os
 from typing import Dict, List, Optional
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from dds.dds_base import DDSObject
@@ -57,7 +58,10 @@ class DDSManager:
             return True
         
         try:
-            ChannelFactoryInitialize(1)
+            iface = os.environ.get("UNITREE_DDS_INTERFACE")
+            if iface:
+                print(f"[DDSManager] DDS network interface: {iface}")
+            ChannelFactoryInitialize(1, iface)
             self.dds_initialized = True
             print("[DDSManager] DDS system initialized")
             return True
