@@ -51,6 +51,12 @@ def _hand_left(**kwargs) -> tuple[float, ...]:
     return _hand(**left)
 
 
+def _hand_right(**kwargs) -> tuple[float, ...]:
+    """Solo mano derecha; izquierda abierta."""
+    right = {f"r_{k}": v for k, v in kwargs.items()}
+    return _hand(**right)
+
+
 # 7 joints: shoulder_pitch, shoulder_roll, shoulder_yaw, elbow, wrist_roll, wrist_pitch, wrist_yaw
 _APPROACH_LEFT = (0.35, 0.25, -0.15, 0.85, 0.0, 0.2, 0.0)
 _LIFT_LEFT = (0.25, 0.25, -0.15, 0.90, 0.0, 0.2, 0.0)
