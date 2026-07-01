@@ -62,7 +62,43 @@ python -m grasp_bridge.cli 3 --hz 80
 | 5 | hook |
 | 6 | precision |
 
-### 4. ROS2 (opcional)
+### 4. Socket TCP (otra computadora)
+
+En la PC con el sim (después de `setup_local_dds.sh` y con el sim en marcha):
+
+```bash
+python -m grasp_bridge.socket_server
+# opcional: --port 5555 --host 0.0.0.0
+```
+
+Desde otra máquina en la red (reemplaza `IP_SIM`):
+
+```python
+import socket
+import struct
+
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect(("IP_SIM", 5555))
+sock.send(struct.pack("<I", 3))   # agarre 3 = lateral
+print(sock.recv(4))               # b"OK" o b"ERROR"
+sock.close()
+```
+
+Una línea:
+
+```bash
+python -c "import socket,struct;s=socket.create_connection(('IP_SIM',5555));s.send(struct.pack('<I',3));print(s.recv(4));s.close()"
+```
+
+| ID | Tipo |
+|----|------|
+| 1–6 | Igual que la tabla de agarres arriba |
+
+Protocolo: cliente envía **4 bytes** `uint32` little-endian; servidor responde `OK` o `ERROR`. Solo un agarre a la vez.
+
+Asegura que el puerto (default **5555**) esté abierto en el firewall de la PC del sim.
+
+### 5. ROS2 (opcional)
 
 ```bash
 source /opt/ros/humble/setup.bash
@@ -112,6 +148,7 @@ No es necesario reiniciar el sim; guardar y volver a ejecutar `cli`.
 | `executor.py` | Interpolación y publicación DDS |
 | `dds_client.py` | Cliente `lowcmd` + Inspire |
 | `cli.py` | Entrada sin ROS2 |
+| `socket_server.py` | TCP: recibe `uint32` 1–6 desde otra PC |
 | `ros2_node.py` | `/grasp_command` (Int32 1–6) |
 | `dds_ping.py` | Prueba de conectividad |
 | `setup_local_dds.sh` | Interfaz de red multicast |

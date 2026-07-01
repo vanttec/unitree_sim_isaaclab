@@ -6,6 +6,7 @@ import os
 from typing import Dict, List, Optional
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize
 from dds.dds_base import DDSObject
+from dds.net_iface import resolve_dds_interface
 
 
 
@@ -58,9 +59,12 @@ class DDSManager:
             return True
         
         try:
-            iface = os.environ.get("UNITREE_DDS_INTERFACE")
+            iface = resolve_dds_interface()
             if iface:
+                os.environ["UNITREE_DDS_INTERFACE"] = iface
                 print(f"[DDSManager] DDS network interface: {iface}")
+            else:
+                print("[DDSManager] DDS network interface: autodetermine")
             ChannelFactoryInitialize(1, iface)
             self.dds_initialized = True
             print("[DDSManager] DDS system initialized")
@@ -184,9 +188,11 @@ class DDSManager:
         self._pub_list.clear()
         for name, obj in self.objects.items():
             if enable_publish_names is None or name in enable_publish_names:
-                obj.setup_publisher()
-                obj.publishing = True
-                self._pub_list.append(name)
+                if obj.setup_publisher():
+                    obj.publishing = True
+                    self._pub_list.append(name)
+                else:
+                    print(f"[DDSManager] skip publishing for '{name}' (publisher init failed)")
         self.publishing_running = True
         
         self.publish_thread = threading.Thread(target=self._publish_loop)
