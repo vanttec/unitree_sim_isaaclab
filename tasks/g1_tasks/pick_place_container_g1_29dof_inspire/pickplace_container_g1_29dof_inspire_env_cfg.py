@@ -20,11 +20,7 @@ from . import mdp
 # use Isaac Lab native event system
 
 from tasks.common_config import  G1RobotPresets, CameraPresets  # isort: skip
-<<<<<<< HEAD
-from tasks.common_event.event_manager import SimpleEvent, SimpleEventManager
-=======
 from tasks.common_event.event_manager import SimpleEvent, SimpleEventManager, reset_rigid_object_exact
->>>>>>> 5eb7cdb (Add grasp bridge with bundled teleop trajectories and RUNBOOK.)
 
 # import public scene configuration
 from tasks.common_scene.base_scene_pickplace_container import TableContainerSceneCfg
