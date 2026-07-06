@@ -40,6 +40,8 @@ class InspireDDS(DDSObject):
         
         self._initialized = True
         
+        self._hand_cmd_callbacks = []
+        
         # setup the shared memory
         self.setup_shared_memory(
             input_shm_name="isaac_inspire_state",  # read the state of the gripper from Isaac Lab
@@ -115,6 +117,10 @@ class InspireDDS(DDSObject):
             return None
     def denormalize(self,norm_val, min_val, max_val):
         return (1.0 - np.clip(norm_val, 0.0, 1.0)) * (max_val - min_val) + min_val
+    def register_hand_cmd_callback(self, callback) -> None:
+        """callback(norm_q: list[float]) on each rt/inspire/cmd message."""
+        self._hand_cmd_callbacks.append(callback)
+
     def dds_subscriber(self, msg: MotorCmds_,datatype:str=None) -> Dict[str, Any]:
         """Process the subscribe data: convert the DDS command to the Isaac Lab format
         
@@ -151,6 +157,12 @@ class InspireDDS(DDSObject):
                 cmd_data["kp"].append(float(msg.cmds[i].kp))
                 cmd_data["kd"].append(float(msg.cmds[i].kd))
             self.output_shm.write_data(cmd_data)
+            norm_q = [float(msg.cmds[i].q) for i in range(min(12, len(msg.cmds)))]
+            for cb in self._hand_cmd_callbacks:
+                try:
+                    cb(norm_q)
+                except Exception as e:
+                    print(f"inspire_dds [{self.node_name}] hand cmd callback error: {e}")
             
         except Exception as e:
             print(f"inspire_dds [{self.node_name}] Error processing subscribe data: {e}")

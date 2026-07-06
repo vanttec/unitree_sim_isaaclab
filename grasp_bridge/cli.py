@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-"""Test grasp bridge over DDS without ROS2.
-
-Usage (sim must be running):
-    python -m grasp_bridge.cli 3
-    python -m grasp_bridge.cli --list
-"""
+"""CLI: run semantic grasp 1-6 over DDS."""
 
 from __future__ import annotations
 

@@ -1,1 +1,1 @@
-"""ROS2/DDS grasp bridge for Unitree G1 + Inspire in sim or on hardware."""
+"""G1 Inspire grasp bridge: DDS control, semantic grasps, teleop trajectories."""

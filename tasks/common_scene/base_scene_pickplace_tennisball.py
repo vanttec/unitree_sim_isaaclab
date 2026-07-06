@@ -89,11 +89,12 @@ class TableTennisBallSceneCfg(InteractiveSceneCfg):
     )
 
     # 3. green base (static pedestal on the table)
+    # Robot spawns at x=-0.15; align base with robot midline on the table.
     # short wide cylinder; bottom sits on the table surface (~0.794)
     # center = table_top(0.794) + height/2(0.025) = 0.819
     base = AssetBaseCfg(
         prim_path="/World/envs/env_.*/Base",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.819],
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.819],
                                                 rot=[1.0, 0.0, 0.0, 0.0]),
         spawn=sim_utils.CylinderCfg(
             radius=0.055,   # base radius
@@ -104,30 +105,30 @@ class TableTennisBallSceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),
     )
 
     # 4. tennis ball (graspable object) resting on top of the base
-    # base top = 0.819 + 0.025 = 0.844; ball center = 0.844 + radius(0.033) = 0.877
+    # base top = 0.819 + 0.025 = 0.844; ball center = 0.844 + radius(0.03135) = 0.87535
     object = RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.877],
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.87535],
                                                   rot=[1, 0, 0, 0]),
         spawn=sim_utils.SphereCfg(
-            radius=0.033,   # tennis ball radius (~33 mm)
+            radius=0.03135,   # ~5% smaller than 33 mm tennis ball
             rigid_props=sim_utils.RigidBodyPropertiesCfg(),
-            mass_props=sim_utils.MassPropertiesCfg(mass=0.057),  # ~57 g
+            mass_props=sim_utils.MassPropertiesCfg(mass=0.049),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.72, 0.85, 0.20)),  # tennis yellow-green
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),

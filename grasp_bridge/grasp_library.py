@@ -1,4 +1,4 @@
-"""Hardcoded grasp definitions — tune joint values in sim."""
+"""Semantic grasp keyframes for G1 + Inspire (DDS normalized hand q: 0=closed, 1=open)."""
 
 from dataclasses import dataclass
 
@@ -7,8 +7,6 @@ from .g1_constants import INSPIRE_OPEN
 
 @dataclass(frozen=True)
 class GraspKeyframe:
-    """One snapshot: 14 arm joints (L7 + R7) + 12 Inspire motor commands (normalized q)."""
-
     name: str
     duration_s: float
     left_arm: tuple[float, ...]
@@ -21,7 +19,7 @@ class GraspSequence:
     grasp_id: int
     label: str
     keyframes: tuple[GraspKeyframe, ...]
-    active_side: str = "left"  # "left" | "right" — el otro brazo se mantiene quieto
+    active_side: str = "left"
 
 
 def _hand(
@@ -38,7 +36,7 @@ def _hand(
     l_thumb_p=0.0,
     l_thumb_y=0.0,
 ) -> tuple[float, ...]:
-    """DDS order: right hand [0-5], left hand [6-11]."""
+    # DDS order: right [0-5], left [6-11]
     return (
         r_pinky, r_ring, r_middle, r_index, r_thumb_p, r_thumb_y,
         l_pinky, l_ring, l_middle, l_index, l_thumb_p, l_thumb_y,
@@ -46,26 +44,19 @@ def _hand(
 
 
 def _hand_left(**kwargs) -> tuple[float, ...]:
-    """Solo mano izquierda; derecha abierta."""
-    left = {f"l_{k}": v for k, v in kwargs.items()}
-    return _hand(**left)
+    return _hand(**{f"l_{k}": v for k, v in kwargs.items()})
 
 
 def _hand_right(**kwargs) -> tuple[float, ...]:
-    """Solo mano derecha; izquierda abierta."""
-    right = {f"r_{k}": v for k, v in kwargs.items()}
-    return _hand(**right)
+    return _hand(**{f"r_{k}": v for k, v in kwargs.items()})
 
 
-# 7 joints: shoulder_pitch, shoulder_roll, shoulder_yaw, elbow, wrist_roll, wrist_pitch, wrist_yaw
+# Arm order: shoulder_pitch, shoulder_roll, shoulder_yaw, elbow, wrist_roll, wrist_pitch, wrist_yaw
 _APPROACH_LEFT = (0.35, 0.25, -0.15, 0.85, 0.0, 0.2, 0.0)
 _LIFT_LEFT = (0.25, 0.25, -0.15, 0.90, 0.0, 0.2, 0.0)
-_APPROACH_RIGHT = (-0.35, -0.25, 0.15, 0.85, 0.0, -0.2, 0.0)
-_LIFT_RIGHT = (-0.25, -0.25, 0.15, 0.75, 0.0, -0.2, 0.0)
 
 
 def _sequence_left(grasp_id: int, label: str, close_hand: tuple[float, ...]) -> GraspSequence:
-    """Solo brazo y mano izquierdos."""
     return GraspSequence(
         grasp_id=grasp_id,
         label=label,

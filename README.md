@@ -4,7 +4,7 @@ Fork de [unitreerobotics/unitree_sim_isaaclab](https://github.com/unitreerobotic
 
 | Documento | Contenido |
 |-----------|-----------|
-| [doc/GRASP_BRIDGE.md](doc/GRASP_BRIDGE.md) | Instalación, comandos, tuning y troubleshooting del bridge |
+| [doc/RUNBOOK.md](doc/RUNBOOK.md) | Sim, agarres, TCP/BCI, teleop, trayectorias |
 | [doc/isaacsim5.0_install.md](doc/isaacsim5.0_install.md) | Isaac Sim 5.0 + Isaac Lab |
 
 ### Inicio rápido (grasp bridge)
@@ -25,7 +25,8 @@ python -m grasp_bridge.cli 3
 
 ### Cambios en el código
 
-- `grasp_bridge/` — seis agarres (CLI y ROS2 opcional)
+- `grasp_bridge/` — agarres 1–6, trayectorias 1–5 (`.npz` en repo), TCP/BCI
+- `doc/RUNBOOK.md` — guía completa de ejecución
 - `dds/dds_master.py` — interfaz DDS configurable (`UNITREE_DDS_INTERFACE`)
 
 ---

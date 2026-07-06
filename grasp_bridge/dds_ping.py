@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Listen for rt/lowstate — quick DDS connectivity check."""
+"""Listen for rt/lowstate (DDS connectivity check)."""
 
 from __future__ import annotations
 

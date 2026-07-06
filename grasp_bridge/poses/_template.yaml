@@ -1,0 +1,64 @@
+# Copy this file to e.g. power.yaml and fill values from Isaac Sim GUI.
+# Generate Python: python -m grasp_bridge.capture_pose --yaml grasp_bridge/poses/power.yaml
+
+grasp_id: 1
+label: power
+active_side: left
+
+keyframes:
+  approach:
+    duration_s: 5.0
+    left_arm:
+      left_shoulder_pitch_joint: 0.35
+      left_shoulder_roll_joint: 0.25
+      left_shoulder_yaw_joint: -0.15
+      left_elbow_joint: 0.85
+      left_wrist_roll_joint: 0.0
+      left_wrist_pitch_joint: 0.2
+      left_wrist_yaw_joint: 0.0
+    left_hand:
+      radians:
+        L_pinky_proximal_joint: 0.0
+        L_ring_proximal_joint: 0.0
+        L_middle_proximal_joint: 0.0
+        L_index_proximal_joint: 0.0
+        L_thumb_proximal_pitch_joint: 0.0
+        L_thumb_proximal_yaw_joint: -0.1
+
+  close:
+    duration_s: 3.0
+    left_arm:
+      left_shoulder_pitch_joint: 0.35
+      left_shoulder_roll_joint: 0.25
+      left_shoulder_yaw_joint: -0.15
+      left_elbow_joint: 0.85
+      left_wrist_roll_joint: 0.0
+      left_wrist_pitch_joint: 0.2
+      left_wrist_yaw_joint: 0.0
+    left_hand:
+      radians:
+        L_pinky_proximal_joint: 1.2
+        L_ring_proximal_joint: 1.2
+        L_middle_proximal_joint: 1.2
+        L_index_proximal_joint: 1.2
+        L_thumb_proximal_pitch_joint: 0.35
+        L_thumb_proximal_yaw_joint: 0.8
+
+  lift:
+    duration_s: 3.0
+    left_arm:
+      left_shoulder_pitch_joint: 0.25
+      left_shoulder_roll_joint: 0.25
+      left_shoulder_yaw_joint: -0.15
+      left_elbow_joint: 0.90
+      left_wrist_roll_joint: 0.0
+      left_wrist_pitch_joint: 0.2
+      left_wrist_yaw_joint: 0.0
+    left_hand:
+      radians:
+        L_pinky_proximal_joint: 1.2
+        L_ring_proximal_joint: 1.2
+        L_middle_proximal_joint: 1.2
+        L_index_proximal_joint: 1.2
+        L_thumb_proximal_pitch_joint: 0.35
+        L_thumb_proximal_yaw_joint: 0.8

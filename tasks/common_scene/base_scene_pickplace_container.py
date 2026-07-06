@@ -113,18 +113,18 @@ class TableContainerSceneCfg(InteractiveSceneCfg):
     )
 
     # 4. cream container (graspable object) standing upright on top of the base
-    # cylinder, axis Z (vertical): diameter 9 cm -> radius 0.045, height 0.05
-    # base top = 0.819 + 0.025 = 0.844; container center = 0.844 + 0.05/2 = 0.869
+    # cylinder, axis Z (vertical); +10% vs previous size
+    # base top = 0.844; container center = 0.844 + height/2
     object = RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.869],  # x = robot centerline
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.867375],
                                                   rot=[1, 0, 0, 0]),
         spawn=sim_utils.CylinderCfg(
-            radius=0.045,   # 9 cm diameter
-            height=0.05,    # a bit shorter
+            radius=0.042075,  # 8.42 cm diameter
+            height=0.04675,
             axis="Z",       # upright
             rigid_props=sim_utils.RigidBodyPropertiesCfg(),
-            mass_props=sim_utils.MassPropertiesCfg(mass=0.10),
+            mass_props=sim_utils.MassPropertiesCfg(mass=0.081),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.96, 0.94, 0.86)),  # cream white
             physics_material=sim_utils.RigidBodyMaterialCfg(

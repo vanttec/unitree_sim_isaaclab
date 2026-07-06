@@ -1,23 +1,4 @@
-"""Convert a g1_replay trajectory_g1.npz (arm_qpos + finger_qpos, from
-do-as-i-do/deployment/g1_replay/replay_retarget.py) into a GraspSequence
-snippet ready to paste into grasp_library.py.
-
-Two format gaps bridged here:
-  - arm: g1_replay's arm_qpos is already 7 radians in the same order
-    GraspKeyframe.left_arm/right_arm expects (shoulder_pitch/roll/yaw, elbow,
-    wrist_roll/pitch/yaw) — passed straight through.
-  - hand: g1_replay's finger_qpos is 12 Inspire joints (driven + passive) in
-    radians; the DDS hand_q is 6 driven motors (pinky, ring, middle, index,
-    thumb_pitch, thumb_yaw) normalized to [0, 1] (0=open, 1=closed). Reads
-    each driven joint's value off its known MJCF range (see
-    g1_29dof_inspire_hand.xml) and divides by that range's max.
-
-Usage:
-  python -m grasp_bridge.from_g1_replay \\
-      --traj trajectory_g1_right.npz \\
-      --grasp-id 7 --label "video_grasp" \\
-      --keyframes "approach=0:5.0,close=45:3.0,lift=60:3.0"
-"""
+"""Convert g1_replay trajectory_g1.npz to a grasp_library GraspSequence snippet."""
 
 from __future__ import annotations
 

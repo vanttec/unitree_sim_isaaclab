@@ -16,6 +16,13 @@ from tasks.common_config import CameraBaseCfg  # isort: skip
 import os
 project_root = os.environ.get("PROJECT_ROOT")
 
+# Coin cradle geometry (module-level: @configclass treats class attrs as assets)
+_COIN_PIN_X = 0.0235
+_COIN_PIN_W = 0.003
+_COIN_PIN_Y = 0.010
+_COIN_PIN_H = 0.050
+_COIN_PIN_Z = 0.844 + _COIN_PIN_H / 2  # base top 0.844
+
 
 @configclass
 class TableCoinSceneCfg(InteractiveSceneCfg):
@@ -90,11 +97,12 @@ class TableCoinSceneCfg(InteractiveSceneCfg):
     )
 
     # 3. green base (static pedestal on the table)
+    # Robot spawns at x=-0.15; align base with robot midline on the table.
     # short wide cylinder; bottom sits on the table surface (~0.794)
     # center = table_top(0.794) + height/2(0.025) = 0.819
     base = AssetBaseCfg(
         prim_path="/World/envs/env_.*/Base",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.819],
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.819],
                                                 rot=[1.0, 0.0, 0.0, 0.0]),
         spawn=sim_utils.CylinderCfg(
             radius=0.055,   # base radius
@@ -105,25 +113,68 @@ class TableCoinSceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),
     )
 
-    # 4. coin (graspable object) standing vertically on its edge on top of the base
-    # thin disk on edge: radius 0.022, thickness 0.004, axis Y (disk faces front)
-    # base top = 0.819 + 0.025 = 0.844; on edge -> center = 0.844 + radius(0.022) = 0.866
+    # 3b. coin cradle: two thin pins on the base top brace the coin on edge (±X).
+    # Disk in XZ plane, flat face toward robot (-Y); pins prevent tip-over on boot / replay reset.
+    coin_support_left = AssetBaseCfg(
+        prim_path="/World/envs/env_.*/CoinSupportLeft",
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15 - _COIN_PIN_X, 0.40, _COIN_PIN_Z],
+                                                rot=[1.0, 0.0, 0.0, 0.0]),
+        spawn=sim_utils.CuboidCfg(
+            size=(_COIN_PIN_W, _COIN_PIN_Y, _COIN_PIN_H),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.33, 0.40, 0.18)),
+            physics_material=sim_utils.RigidBodyMaterialCfg(
+                friction_combine_mode="max",
+                restitution_combine_mode="min",
+                static_friction=3.0,
+                dynamic_friction=3.0,
+                restitution=0.0,
+            ),
+        ),
+    )
+    coin_support_right = AssetBaseCfg(
+        prim_path="/World/envs/env_.*/CoinSupportRight",
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15 + _COIN_PIN_X, 0.40, _COIN_PIN_Z],
+                                                rot=[1.0, 0.0, 0.0, 0.0]),
+        spawn=sim_utils.CuboidCfg(
+            size=(_COIN_PIN_W, _COIN_PIN_Y, _COIN_PIN_H),
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
+            collision_props=sim_utils.CollisionPropertiesCfg(),
+            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.33, 0.40, 0.18)),
+            physics_material=sim_utils.RigidBodyMaterialCfg(
+                friction_combine_mode="max",
+                restitution_combine_mode="min",
+                static_friction=3.0,
+                dynamic_friction=3.0,
+                restitution=0.0,
+            ),
+        ),
+    )
+
+    # 4. coin (graspable object) standing vertically on its edge between the cradle pins
+    # thin disk on edge: radius 0.022, thickness 0.004, axis Y
+    # center z = base_top(0.844) + radius(0.022) + 0.002 clearance = 0.868
+    # rot euler (0,-90,180): vertical on edge in XZ plane, flat face toward robot (-Y)
     object = RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.866],
-                                                  rot=[0.7071, 0.0, 0.0, 0.7071]),  # yaw 90 deg
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.868],
+                                                  rot=[0.0, 0.7071, 0.0, 0.7071]),
         spawn=sim_utils.CylinderCfg(
             radius=0.022,   # coin radius (~22 mm)
             height=0.004,   # coin thickness
-            axis="Y",       # symmetry axis horizontal -> coin stands on its edge
-            rigid_props=sim_utils.RigidBodyPropertiesCfg(),
+            axis="Y",       # thickness along Y; standing on edge in XZ plane
+            rigid_props=sim_utils.RigidBodyPropertiesCfg(
+                angular_damping=0.5,
+                max_depenetration_velocity=1.0,
+            ),
             mass_props=sim_utils.MassPropertiesCfg(mass=0.012),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.83, 0.69, 0.22),  # gold/brass
@@ -131,8 +182,8 @@ class TableCoinSceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),

@@ -90,11 +90,12 @@ class TableCardsDeckSceneCfg(InteractiveSceneCfg):
     )
 
     # 3. green base (static pedestal on the table)
+    # Robot spawns at x=-0.15; align base with robot midline on the table.
     # short wide cylinder; bottom sits on the table surface (~0.794)
     # center = table_top(0.794) + height/2(0.025) = 0.819
     base = AssetBaseCfg(
         prim_path="/World/envs/env_.*/Base",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.819],
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.819],
                                                 rot=[1.0, 0.0, 0.0, 0.0]),
         spawn=sim_utils.CylinderCfg(
             radius=0.055,   # base radius
@@ -105,31 +106,30 @@ class TableCardsDeckSceneCfg(InteractiveSceneCfg):
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),
     )
 
     # 4. deck of cards (graspable object) resting flat on top of the base
-    # box lying flat: size = (0.063 x 0.088 x 0.02) ~ poker deck
-    # base top = 0.819 + 0.025 = 0.844; deck center = 0.844 + 0.02/2 = 0.854
+    # base top = 0.844; deck center z = 0.844 + thickness/2
     object = RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.35, 0.40, 0.854],
-                                                  rot=[1, 0, 0, 0]),
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.152, 0.380, 0.856351],
+                                                  rot=[0.9914, 0.0, 0.0, 0.1305]),  # ~15 deg yaw (left)
         spawn=sim_utils.CuboidCfg(
-            size=(0.063, 0.088, 0.02),   # deck of cards (W x L x thickness)
+            size=(0.070803, 0.098872, 0.024702),   # deck of cards (W x L x thickness)
             rigid_props=sim_utils.RigidBodyPropertiesCfg(),
-            mass_props=sim_utils.MassPropertiesCfg(mass=0.095),  # ~95 g full deck
+            mass_props=sim_utils.MassPropertiesCfg(mass=0.149),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.95, 0.95, 0.95)),  # white
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
-                static_friction=1.5,
-                dynamic_friction=1.5,
+                static_friction=3.0,
+                dynamic_friction=3.0,
                 restitution=0.0,
             ),
         ),

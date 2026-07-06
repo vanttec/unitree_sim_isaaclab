@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""TCP server: receive grasp_id (uint32 LE) from a remote machine and run the grasp.
-
-Protocol:
-    client -> 4 bytes: struct.pack('<I', grasp_id)   # 1-6
-    server -> b"OK" or b"ERROR"
-
-Usage (sim must be running):
-    python -m grasp_bridge.socket_server
-    python -m grasp_bridge.socket_server --port 5555 --host 0.0.0.0
-"""
+"""TCP server: uint32 grasp_id (1-6) → replay semantic grasp. Port 5555."""
 
 from __future__ import annotations
 

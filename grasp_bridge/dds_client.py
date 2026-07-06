@@ -10,12 +10,12 @@ from typing import Iterable
 import numpy as np
 from unitree_sdk2py.core.channel import ChannelFactoryInitialize, ChannelPublisher, ChannelSubscriber
 from unitree_sdk2py.idl.default import unitree_go_msg_dds__MotorCmd_, unitree_hg_msg_dds__LowCmd_
-from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmds_
+from unitree_sdk2py.idl.unitree_go.msg.dds_ import MotorCmds_, MotorStates_
 from unitree_sdk2py.idl.unitree_hg.msg.dds_ import LowCmd_, LowState_
 from unitree_sdk2py.utils.crc import CRC
 
 from .dds_env import configure_local_dds, dds_interface
-from .g1_constants import ARM_JOINTS, G1_NUM_MOTOR, KD, KP
+from .g1_constants import G1_NUM_MOTOR, KD, KP
 
 
 class UnitreeDdsClient:
@@ -29,6 +29,7 @@ class UnitreeDdsClient:
     ):
         self._crc = CRC()
         self._low_state: LowState_ | None = None
+        self._hand_state: list[float] | None = None
         self._state_lock = threading.Lock()
         self._mode_machine = 0
         self._state_count = 0
@@ -51,6 +52,13 @@ class UnitreeDdsClient:
 
         self._low_sub = ChannelSubscriber("rt/lowstate", LowState_)
         self._low_sub.Init(self._on_low_state, 10)
+
+        self._hand_sub = ChannelSubscriber("rt/inspire/state", MotorStates_)
+        self._hand_sub.Init(self._on_hand_state, 10)
+
+    def _on_hand_state(self, msg: MotorStates_) -> None:
+        with self._state_lock:
+            self._hand_state = [float(s.q) for s in msg.states[:12]]
 
     def _on_low_state(self, msg: LowState_) -> None:
         with self._state_lock:
@@ -91,6 +99,12 @@ class UnitreeDdsClient:
                 raise RuntimeError("lowstate not available")
             return np.array([self._low_state.motor_state[i].q for i in range(G1_NUM_MOTOR)], dtype=np.float64)
 
+    def current_hand_positions(self) -> np.ndarray:
+        with self._state_lock:
+            if self._hand_state is None:
+                raise RuntimeError("inspire state not available")
+            return np.array(self._hand_state[:12], dtype=np.float64)
+
     def publish_lowcmd(self, joint_targets: Iterable[float], kp: Iterable[float] | None = None, kd: Iterable[float] | None = None) -> None:
         targets = list(joint_targets)
         if len(targets) < G1_NUM_MOTOR:
@@ -115,7 +129,7 @@ class UnitreeDdsClient:
         cmd.crc = self._crc.Crc(cmd)
         self._low_pub.Write(cmd)
 
-    def publish_inspire(self, hand_q: Iterable[float], hand_kp: float = 1.0, hand_kd: float = 0.05) -> None:
+    def publish_inspire(self, hand_q: Iterable[float], hand_kp: float = 0.0, hand_kd: float = 0.0) -> None:
         values = list(hand_q)
         if len(values) != 12:
             raise ValueError(f"expected 12 inspire motor commands, got {len(values)}")

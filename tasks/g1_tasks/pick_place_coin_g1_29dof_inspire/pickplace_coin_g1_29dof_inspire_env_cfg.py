@@ -20,7 +20,7 @@ from . import mdp
 # use Isaac Lab native event system
 
 from tasks.common_config import  G1RobotPresets, CameraPresets  # isort: skip
-from tasks.common_event.event_manager import SimpleEvent, SimpleEventManager
+from tasks.common_event.event_manager import SimpleEvent, SimpleEventManager, reset_rigid_object_exact
 
 # import public scene configuration
 from tasks.common_scene.base_scene_pickplace_coin import TableCoinSceneCfg
@@ -98,19 +98,9 @@ class RewardsCfg:
 @configclass
 class EventCfg:
     reset_object = EventTermCfg(
-        func=mdp.reset_root_state_uniform,  # use uniform distribution reset function
-        mode="reset",   # set event mode to reset
-        params={
-            # position range parameter
-            "pose_range": {
-                "x": [-0.01, 0.01],  # small jitter; base radius 0.055 keeps deck centered
-                "y": [-0.01, 0.01],
-            },
-            # speed range parameter (empty dictionary means using default value)
-            "velocity_range": {},
-            # specify the object to reset
-            "asset_cfg": SceneEntityCfg("object"),
-        },
+        func=reset_rigid_object_exact,
+        mode="reset",
+        params={"asset_cfg": SceneEntityCfg("object")},
     )
 
 
@@ -152,13 +142,11 @@ class PickPlaceG129InspireBaseFixEnvCfg(ManagerBasedRLEnvCfg):
 
         # register "reset object" event
         self.event_manager.register("reset_object_self", SimpleEvent(
-            func=lambda env: base_mdp.reset_root_state_uniform(
+            func=lambda env: reset_rigid_object_exact(
                 env,
                 torch.arange(env.num_envs, device=env.device),
-                pose_range={"x": [-0.01, 0.01], "y": [-0.01, 0.01]},
-                velocity_range={},
                 asset_cfg=SceneEntityCfg("object"),
-            )
+            ),
         ))
         
         self.event_manager.register("reset_all_self", SimpleEvent(

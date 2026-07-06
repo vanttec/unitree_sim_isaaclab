@@ -17,6 +17,22 @@ class SimpleEvent:
         return self.func(env, **self.params)
 
 
+def reset_rigid_object_exact(
+    env,
+    env_ids: torch.Tensor,
+    asset_cfg: SceneEntityCfg = SceneEntityCfg("object"),
+) -> None:
+    """Reset one rigid object to its scene default pose — no random jitter."""
+    if not isinstance(env_ids, torch.Tensor):
+        env_ids = torch.tensor(list(env_ids), device=env.device, dtype=torch.long)
+    asset = env.scene[asset_cfg.name]
+    default_root_state = asset.data.default_root_state[env_ids].clone()
+    default_root_state[:, 0:3] += env.scene.env_origins[env_ids]
+    default_root_state[:, 7:13] = 0.0
+    asset.write_root_pose_to_sim(default_root_state[:, :7], env_ids=env_ids)
+    asset.write_root_velocity_to_sim(default_root_state[:, 7:], env_ids=env_ids)
+
+
 class MultiObjectEvent:
     """支持多个物体操作的事件类"""
     

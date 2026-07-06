@@ -78,6 +78,12 @@ parser.add_argument("--camera_exclude", type=str, default="world_camera", help="
 
 parser.add_argument("--env_reward_interval", type=int, default=5, help="environment reward compute interval (steps)")
 parser.add_argument("--seed", type=int, default=42, help="environment seed")
+parser.add_argument(
+    "--enable_grasp_attach",
+    action="store_true",
+    default=False,
+    help="attach object to hand when grasp is firm (off by default)",
+)
 
 # add AppLauncher parameters
 AppLauncher.add_app_launcher_args(parser)
@@ -385,7 +391,18 @@ def main():
             print(f"Failed to create dds: {e}")
             return
         print("========= create dds success =========")
+        object_grasp = None
+        if args_cli.enable_inspire_dds and args_cli.enable_grasp_attach:
+            try:
+                from grasp_bridge.object_grasp import ObjectGraspController
+                inspire_dds = dds_manager.get_object("inspire")
+                object_grasp = ObjectGraspController(env, inspire_dds)
+                print("========= object grasp attach enabled =========")
+            except Exception as e:
+                print(f"object grasp attach disabled: {e}")
+                object_grasp = None
     else:
+        object_grasp = None
         print("========= create dds =========")
         try:
             create_dds_objects_replay(args_cli,env)
@@ -494,10 +511,14 @@ def main():
                             if (args_cli.enable_wholebody_dds and (reset_category == '1' or reset_category == '2')) or (not args_cli.enable_wholebody_dds and reset_category == '1'):
                                 print("reset object")
                                 env_cfg.event_manager.trigger("reset_object_self", env)
+                                if object_grasp is not None:
+                                    object_grasp.reset()
                                 reset_pose_dds.write_reset_pose_command(-1)
                             elif reset_category == '2' and not args_cli.enable_wholebody_dds:
                                 print("reset all")
                                 env_cfg.event_manager.trigger("reset_all_self", env)
+                                if object_grasp is not None:
+                                    object_grasp.reset()
                                 reset_pose_dds.write_reset_pose_command(-1)
                         except Exception as e:
                             print(f"Failed to write reset pose command: {e}")
@@ -533,6 +554,8 @@ def main():
                 
                 # execute control step (in main thread, support rendering)
                 controller.step()
+                if object_grasp is not None:
+                    object_grasp.update()
 
                 # print statistics and loop frequency periodically
                 if current_time - last_stats_time >= args_cli.stats_interval:

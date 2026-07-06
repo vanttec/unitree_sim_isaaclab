@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""ROS2 front-end for the Unitree grasp bridge.
-
-Usage:
-    # Terminal 1: sim
-    python sim_main.py --task Isaac-PickPlace-Cylinder-G129-Inspire-Joint \\
-        --enable_inspire_dds --robot_type g129 --enable_cameras
-
-    # Terminal 2: bridge
-    source /opt/ros/humble/setup.bash
-    conda activate env_isaaclab
-    python -m grasp_bridge.ros2_node
-
-    # Terminal 3: trigger
-    ros2 topic pub --once /grasp_command std_msgs/msg/Int32 "{data: 2}"
-"""
+"""ROS2 /grasp_command (Int32 1-6) → semantic grasp over DDS."""
 
 from __future__ import annotations
 
