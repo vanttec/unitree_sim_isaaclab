@@ -16,14 +16,19 @@ from .trajectory_io import load_trajectory
 DEFAULT_HAND_GRIP_BOOST = 0.0
 
 
-def _boost_hand_grip(hand: np.ndarray, boost: float) -> np.ndarray:
-    """Pull normalized Inspire cmds toward closed (q=0) when already grasping."""
-    if boost <= 0.0:
+def _boost_hand_grip(hand: np.ndarray, right_boost: float, left_boost: float = 0.0) -> np.ndarray:
+    """Pull normalized Inspire cmds toward closed (q=0). Right: 0-5, left: 6-11."""
+    if right_boost <= 0.0 and left_boost <= 0.0:
         return hand
     out = np.array(hand, dtype=np.float64, copy=True)
-    for i in range(12):
-        if out[i] < 0.75:
-            out[i] = max(0.0, out[i] * (1.0 - boost))
+    if right_boost > 0.0:
+        for i in range(6):
+            if out[i] < 0.9:
+                out[i] = max(0.0, out[i] * (1.0 - right_boost))
+    if left_boost > 0.0:
+        for i in range(6, 12):
+            if out[i] < 0.9:
+                out[i] = max(0.0, out[i] * (1.0 - left_boost))
     return out
 
 
@@ -100,9 +105,10 @@ class TrajectoryExecutor:
         self._hand_kp = hand_kp
         self._hand_kd = hand_kd
         self._hand_grip_boost = hand_grip_boost
+        self._left_hand_grip_boost = 0.0
 
     def _publish_frame(self, body: np.ndarray, hand: np.ndarray) -> None:
-        hand_cmd = _boost_hand_grip(hand, self._hand_grip_boost)
+        hand_cmd = _boost_hand_grip(hand, self._hand_grip_boost, self._left_hand_grip_boost)
         self._client.publish_lowcmd(body)
         self._client.publish_inspire(hand_cmd, hand_kp=self._hand_kp, hand_kd=self._hand_kd)
 
@@ -127,8 +133,29 @@ class TrajectoryExecutor:
         i: int,
         *,
         left_hold: LeftSideHold | None = None,
+        left_join: tuple[float, float, float] | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         targets, hand_q = self._recording_frame(traj, i)
+
+        if left_join is not None and left_hold is not None:
+            freeze_s, join_ramp_s, hz = left_join
+            freeze_steps = max(1, int(freeze_s * hz))
+            ramp_steps = max(1, int(join_ramp_s * hz))
+            if i < freeze_steps:
+                out_body = np.array(targets, dtype=np.float64, copy=True)
+                out_hand = np.array(hand_q, dtype=np.float64, copy=True)
+                _apply_left_side_hold(out_body, out_hand, left_hold)
+                return out_body, out_hand
+            if i < freeze_steps + ramp_steps:
+                alpha = (i - freeze_steps + 1) / ramp_steps
+                out_body = np.array(targets, dtype=np.float64, copy=True)
+                out_hand = np.array(hand_q, dtype=np.float64, copy=True)
+                for j, idx in enumerate(LEFT_ARM_JOINTS):
+                    out_body[idx] = (1.0 - alpha) * left_hold.arm_q[j] + alpha * targets[idx]
+                for j in range(6):
+                    out_hand[6 + j] = (1.0 - alpha) * left_hold.hand_q[j] + alpha * hand_q[6 + j]
+                return out_body, out_hand
+            return targets, hand_q
 
         if left_hold is None:
             return targets, hand_q
@@ -281,8 +308,11 @@ class TrajectoryExecutor:
 
         slot_info = get_slot(slot)
         saved_grip_boost = self._hand_grip_boost
+        saved_left_grip_boost = self._left_hand_grip_boost
         if slot_info.hand_grip_boost is not None:
             self._hand_grip_boost = slot_info.hand_grip_boost
+        if slot_info.left_hand_grip_boost is not None:
+            self._left_hand_grip_boost = slot_info.left_hand_grip_boost
         traj = load_trajectory(slot)
         hz = float(traj["hz"])
         dt = 1.0 / hz
@@ -297,15 +327,29 @@ class TrajectoryExecutor:
             print(f"[traj] Source: {src}")
         print("[traj] IMPORTANTE: para el teleop antes de reproducir (Ctrl+C en teleop_hand_and_arm.py)")
         if slot_info.hand_grip_boost is not None:
-            print(f"[traj] hand grip boost: {self._hand_grip_boost:.2f} (slot {slot})")
+            print(f"[traj] right hand grip boost: {self._hand_grip_boost:.2f} (slot {slot})")
+        if slot_info.left_hand_grip_boost is not None:
+            print(f"[traj] left hand grip boost: {self._left_hand_grip_boost:.2f} (slot {slot})")
 
         if reset_object:
             publish_reset_category(1, channel=reset_channel)
-            time.sleep(1.5)
+            settle = slot_info.reset_settle_s
+            print(f"[traj] Object reset + {settle:.1f}s settle")
+            time.sleep(settle)
 
         use_offset = slot_info.playback_offset_s > 0.0
-        left_hold = _capture_left_side_hold(self._client) if freeze_left_arm else None
-        if left_hold is not None:
+        use_left_join = slot_info.left_side_freeze_s > 0.0 and not use_offset
+        left_hold = None
+        left_join = None
+        if use_left_join:
+            left_hold = _capture_left_side_hold(self._client)
+            left_join = (slot_info.left_side_freeze_s, slot_info.left_side_join_ramp_s, hz)
+            print(
+                f"[traj] Left side: freeze {slot_info.left_side_freeze_s:.0f}s at sim pose, "
+                f"then ramp {slot_info.left_side_join_ramp_s:.0f}s into recording"
+            )
+        elif freeze_left_arm:
+            left_hold = _capture_left_side_hold(self._client)
             print("[traj] Left arm + left hand locked to current sim pose (only right side replays)")
 
         if not use_offset:
@@ -318,7 +362,9 @@ class TrajectoryExecutor:
                 else:
                     t_play = time.perf_counter()
                     for i in range(n):
-                        targets, hand_q = self._frame_targets(traj, i, left_hold=left_hold)
+                        targets, hand_q = self._frame_targets(
+                            traj, i, left_hold=left_hold, left_join=left_join
+                        )
                         self._publish_frame(targets, hand_q)
                         t_next = t_play + (i + 1) * dt
                         time.sleep(max(0.0, t_next - time.perf_counter()))
@@ -332,6 +378,7 @@ class TrajectoryExecutor:
             print("[traj] Interrupted")
         finally:
             self._hand_grip_boost = saved_grip_boost
+            self._left_hand_grip_boost = saved_left_grip_boost
 
         print(f"[traj] Done slot {slot}")
 

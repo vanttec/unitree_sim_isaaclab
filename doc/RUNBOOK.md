@@ -62,6 +62,13 @@ Esperar: `DDS network interface: ...` y `start controller success`.
 ./scripts/run_inspire_teleop_env.sh cylinder | redblock
 ```
 
+Modo ligero (teleop / Quest; menos carga GPU):
+
+```bash
+FAST=1 ./scripts/run_inspire_teleop_env.sh cardsdeck
+# FAST=1 HEADLESS=1 ...   # sin ventana Isaac, solo cámaras offscreen
+```
+
 Agarre firme al objeto (opcional):
 
 ```bash
@@ -197,7 +204,7 @@ Otros slots (mismo patrón: sim con el objeto correcto, luego `play N`):
 ```bash
 ./scripts/run_inspire_teleop_env.sh stick       && python -m grasp_bridge.trajectory_cli play 2
 ./scripts/run_inspire_teleop_env.sh tennisball  && python -m grasp_bridge.trajectory_cli play 3
-./scripts/run_inspire_teleop_env.sh cardsdeck   && python -m grasp_bridge.trajectory_cli play 4
+./scripts/run_inspire_teleop_env.sh cardsdeck   && python -m grasp_bridge.trajectory_cli play 4 --reset-object
 ./scripts/run_inspire_teleop_env.sh container   && python -m grasp_bridge.trajectory_cli play 5
 ```
 
@@ -268,9 +275,10 @@ python -m grasp_bridge.trajectory_send --interactive
 ### Reset objeto
 
 ```bash
-python reset_pose_test.py 1   # solo objeto
-python reset_pose_test.py 2   # escena completa
+python reset_pose_test.py   # categoría 1: robot + objeto a pose inicial
 ```
+
+Ajustes por slot (boost, ramp, offset al segundo N): `grasp_bridge/trajectory_registry.py`.
 
 ---
 

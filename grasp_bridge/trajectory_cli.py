@@ -64,6 +64,8 @@ def _cmd_play(args: argparse.Namespace) -> int:
     )
     client.wait_for_state(timeout_s=args.timeout)
     freeze = get_slot(args.slot).freeze_left_arm or args.freeze_left_arm
+    slot_info = get_slot(args.slot)
+    ramp_s = slot_info.default_ramp_s if slot_info.default_ramp_s is not None else args.ramp_s
     TrajectoryExecutor(
         client,
         hand_kp=args.hand_kp,
@@ -72,7 +74,7 @@ def _cmd_play(args: argparse.Namespace) -> int:
     ).run(
         args.slot,
         loop=args.loop,
-        ramp_s=args.ramp_s,
+        ramp_s=ramp_s,
         reset_object=args.reset_object,
         reset_channel=args.channel,
         freeze_left_arm=freeze,

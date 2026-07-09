@@ -20,6 +20,9 @@ class TrajectorySlot:
     left_side_join_ramp_s: float = 2.0
     playback_offset_s: float = 0.0
     hand_grip_boost: float | None = None
+    left_hand_grip_boost: float | None = None
+    reset_settle_s: float = 1.5
+    default_ramp_s: float | None = None
 
 
 TRAJECTORY_SLOTS: dict[int, TrajectorySlot] = {
@@ -31,9 +34,9 @@ TRAJECTORY_SLOTS: dict[int, TrajectorySlot] = {
         "cardsdeck",
         "cardsdeck",
         "cardsdeck",
-        left_side_freeze_s=5.0,
-        playback_offset_s=5.0,
-        hand_grip_boost=0.40,
+        reset_settle_s=0.0,
+        default_ramp_s=5.0,
+        hand_grip_boost=0.0,
     ),
     5: TrajectorySlot(5, "container", "container", "container", freeze_left_arm=True),
 }

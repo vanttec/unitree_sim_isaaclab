@@ -90,16 +90,14 @@ class TableCardsDeckSceneCfg(InteractiveSceneCfg):
     )
 
     # 3. green base (static pedestal on the table)
-    # Robot spawns at x=-0.15; align base with robot midline on the table.
-    # short wide cylinder; bottom sits on the table surface (~0.794)
-    # center = table_top(0.794) + height/2(0.025) = 0.819
+    # Rectangular pedestal aligned under the deck; bottom sits on the table (~0.794).
+    # center = table_top(0.794) + height/2(0.0175) = 0.8115  (30% smaller than prior)
     base = AssetBaseCfg(
         prim_path="/World/envs/env_.*/Base",
-        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.15, 0.40, 0.819],
+        init_state=AssetBaseCfg.InitialStateCfg(pos=[-0.152, 0.380, 0.8115],
                                                 rot=[1.0, 0.0, 0.0, 0.0]),
-        spawn=sim_utils.CylinderCfg(
-            radius=0.055,   # base radius
-            height=0.05,    # base height
+        spawn=sim_utils.CuboidCfg(
+            size=(0.063, 0.021, 0.035),
             rigid_props=sim_utils.RigidBodyPropertiesCfg(kinematic_enabled=True),
             collision_props=sim_utils.CollisionPropertiesCfg(),
             visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.33, 0.40, 0.18)),  # olive green
@@ -114,17 +112,21 @@ class TableCardsDeckSceneCfg(InteractiveSceneCfg):
     )
 
     # 4. deck of cards (graspable object) resting flat on top of the base
-    # base top = 0.844; deck center z = 0.844 + thickness/2
+    # base top = 0.829; deck center z = 0.829 + thickness/2
     object = RigidObjectCfg(
         prim_path="/World/envs/env_.*/Object",
-        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.152, 0.380, 0.856351],
-                                                  rot=[0.9914, 0.0, 0.0, 0.1305]),  # ~15 deg yaw (left)
+        init_state=RigidObjectCfg.InitialStateCfg(pos=[-0.152, 0.380, 0.8412],
+                                                  rot=[0.70710678, 0.0, 0.0, 0.70710678]),  # 90 deg yaw: long axis perpendicular to robot
         spawn=sim_utils.CuboidCfg(
-            size=(0.070803, 0.098872, 0.024702),   # deck of cards (W x L x thickness)
+            size=(0.0353, 0.0546, 0.0244),   # deck (W x L x thickness), 30% smaller
             rigid_props=sim_utils.RigidBodyPropertiesCfg(),
-            mass_props=sim_utils.MassPropertiesCfg(mass=0.149),
+            mass_props=sim_utils.MassPropertiesCfg(mass=0.087),
             collision_props=sim_utils.CollisionPropertiesCfg(),
-            visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.95, 0.95, 0.95)),  # white
+            visual_material=sim_utils.PreviewSurfaceCfg(
+                diffuse_color=(0.0, 0.0, 0.0),
+                metallic=0.0,
+                roughness=1.0,
+            ),  # vanta black
             physics_material=sim_utils.RigidBodyMaterialCfg(
                 friction_combine_mode="max",
                 restitution_combine_mode="min",
