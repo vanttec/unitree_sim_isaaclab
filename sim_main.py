@@ -53,6 +53,13 @@ parser.add_argument("--profile_interval", type=int, default=500, help="performan
 parser.add_argument("--model_path", type=str, default="assets/model/policy.onnx", help="model path")
 parser.add_argument("--reward_interval", type=int, default=10, help="step interval for reward calculation")
 parser.add_argument("--enable_wholebody_dds", action="store_true", default=False, help="enable wh dds")
+parser.add_argument("--wbc_internal", action="store_true", default=False,
+                    help="Run NVIDIA GR00T-WholeBodyControl Balance/Walk ONNX inside the "
+                         "action_provider (no DDS round-trip). Locomotion commands still "
+                         "come from rt/run_command/cmd. WBC starts driving legs from "
+                         "tick 1 — bundled policy.onnx is disabled.")
+parser.add_argument("--locomanip_record", action="store_true", default=False, help="record loco-manip episodes (locomanip/, toggled by python -m locomanip.cli)")
+parser.add_argument("--locomanip_dir", type=str, default="./data/locomanip", help="where loco-manip episodes are saved")
 
 parser.add_argument("--physics_dt", type=float, default=None, help="physics time step, e.g., 0.005")
 parser.add_argument("--render_interval", type=int, default=None, help="render interval steps (>=1)")
@@ -401,8 +408,13 @@ def main():
             except Exception as e:
                 print(f"object grasp attach disabled: {e}")
                 object_grasp = None
+        locomanip_rec = None
+        if args_cli.locomanip_record:
+            from locomanip.recorder import LocomanipRecorder
+            locomanip_rec = LocomanipRecorder(env, args_cli.task, args_cli.locomanip_dir, dds_manager)
     else:
         object_grasp = None
+        locomanip_rec = None
         print("========= create dds =========")
         try:
             create_dds_objects_replay(args_cli,env)
@@ -556,6 +568,8 @@ def main():
                 controller.step()
                 if object_grasp is not None:
                     object_grasp.update()
+                if locomanip_rec is not None:
+                    locomanip_rec.step()
 
                 # print statistics and loop frequency periodically
                 if current_time - last_stats_time >= args_cli.stats_interval:
@@ -603,6 +617,8 @@ def main():
     finally:
         # clean up resources
         print("\nclean up resources...")
+        if locomanip_rec is not None:
+            locomanip_rec.close()   # an episode still recording on Ctrl-C is saved, not lost
         controller.cleanup()
         image_server.stop()
         env.close()
