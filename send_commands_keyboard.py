@@ -7,6 +7,7 @@ import time
 from unitree_sdk2py.core.channel import ChannelPublisher, ChannelFactoryInitialize
 from unitree_sdk2py.idl.std_msgs.msg.dds_ import String_
 
+import os
 import threading
 import math
 import numpy as np
@@ -46,7 +47,7 @@ class KeyboardController:
             'x_vel': (-0.6, 1.0),    # forward velocity
             'y_vel': (-0.5, 0.5),   # lateral velocity
             'yaw_vel': (-1.57, 1.57), # yaw velocity
-            'height': (-0.5, 0.0)    # height
+            'height': (-float(os.environ.get("LOCO_CROUCH", "0.5")), 0.0)    # height (GR00T-WBC: LOCO_CROUCH=0.2)
         }
         
         # key state
@@ -267,7 +268,7 @@ if __name__ == "__main__":
         
         print("initializing keyboard controller...")
         keyboard_controller = KeyboardController()
-        default_height = 0.8
+        default_height = float(os.environ.get("LOCO_HEIGHT", "0.8"))   # GR00T-WBC (--wbc_internal) stands at 0.74
         
         print("=" * 50)
         print("program started, waiting for keyboard input...")
